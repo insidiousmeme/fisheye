@@ -1,2 +1,3 @@
 # fisheye
-Convert raw vr files to equirectangular iamges
+2016-10-26
+Convert dual fisheye image to equirectangular images for mp4 video files.
