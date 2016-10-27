@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Fisheye converter</title>
+</head>
+
+<h2>Fisheye converter</h2>
+
+{% if error %}
+	<pre class="error">
+Errors:
+{{error}}
+  </pre>
+{% endif %}
+
+{% from "_formhelpers.html" import render_field %}
+<form action="" method="post" enctype="multipart/form-data">
+  <dl>
+    {{ form.csrf_token }}
+    {{ render_field(form.email) }}
+    {{ render_field(form.password) }}
+    {{ render_field(form.video) }}
+    {{ render_field(form.degree) }}
+    {{ render_field(form.rotation) }}
+  </dl>
+  <p><input type=submit value=Convert>
+</form>
+
+</html>

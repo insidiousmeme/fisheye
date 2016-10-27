@@ -1,0 +1,106 @@
+# Documentations
+docs/doxygen/*
+docs/cscope/*
+docs/ctag/*
+docs/ctags/*
+src/cscope.out
+
+src/ctags.out
+
+# AutoTools
+# http://www.gnu.org/software/automake
+Makefile.in
+
+# http://www.gnu.org/software/autoconf
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+
+src/library/algorithms/.deps/
+src/library/algorithms/.dirstamp
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Temporary compilation files
+target
+
+src/thrift/gen-cpp/.deps
+src/thrift/gen-cpp/.deps/*.Po
+src/thrift/gen-cpp/.deps/.dirstamp
+src/thrift/gen-*
+src/.deps
+src/.libs
+src/ltdl/
+src/libltdl/
+
+src/Makefile
+src/Makefile.am
+src/_configs.sed
+src/aclocal.m4
+src/autom4te.cache/
+src/autotools/
+src/config.log
+src/config.status
+src/configuration/autotools_config.h
+src/configuration/autotools_config.h.in
+src/configuration/config.h
+src/configuration/stamp-h1
+src/configure
+src/configure.ac
+src/gmon.out
+src/library/.deps/
+src/library/.dirstamp
+src/library/thrift/.deps/
+src/library/thrift/.dirstamp
+src/libtool
+src/m4/argz.m4
+src/m4/libtool.m4
+src/m4/ltdl.m4
+src/m4/ltoptions.m4
+src/m4/ltsugar.m4
+src/m4/ltversion.m4
+src/m4/lt~obsolete.m4
+src/thrift/gen-cpp/
+
+# Visual Studio
+build/visual_studio/*.sdf
+build/visual_studio/Debug
+build/visual_studio/Debug/*
+
+# Local cache
+data/
+data/cache
+data/cache/*
+
+# Generated components
+
+VERSION
+src/configuration/*.yaml
+.DS_Store
+.vagrant/
+Dockerfile
+build/chef/Berksfile.lock
+build/chef/docker-cookbooks
+build/chef/vagrant-cookbooks/
+build/chef/.librarian/
+build/chef/tmp/
+build/chef/chef_key
+build/chef/data_bags/secrets/
+build/ssh
+.vagrant
+.bundle

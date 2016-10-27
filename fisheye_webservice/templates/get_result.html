@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Fisheye converter</title>
+</head>
+
+<h2>Fisheye converter</h2>
+
+{% if error %}
+  <pre class="error">
+Errors:
+{{error}}
+  </pre>
+{% endif %}
+
+<div>
+  {% if link %}
+    Hooray! It's Ready! You can <a href="{{link}}">download your video</a>
+  {% else %}
+    We still processing your video. Please refresh this page in few minutes.
+  {% endif %}
+</div>
+</html>
