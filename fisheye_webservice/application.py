@@ -123,6 +123,7 @@ def get_result(video_uuid):
 
 @app.route('/download/<video_uuid>')
 def download(video_uuid):
+
   try:
     video = Video.get(Video.uuid == video_uuid)
   except:
@@ -131,7 +132,9 @@ def download(video_uuid):
   if video.error:
     return render_template('get_result.html', error=video.error)
 
-  return send_from_directory('.', video.converted_file_path)
+  return send_from_directory(
+      os.path.dirname(video.converted_file_path),
+      os.path.basename(video.converted_file_path))
 
 
 def convert_fisheye_video(original_file_path, converted_file_path, degree, rotation):
