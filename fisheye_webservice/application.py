@@ -45,9 +45,9 @@ def allowed_file(filename):
 
 @app.before_first_request
 def init_application():
-  os.makedirs(Settings.CONVERTED_UNPAID_FOLDER, exist_ok=True)
-  os.makedirs(Settings.CONVERTED_PAID_FOLDER, exist_ok=True)
-  os.makedirs(Settings.UPLOAD_FOLDER, exist_ok=True)
+  os.makedirs(os.path.join(Settings.APP_ROOT, Settings.CONVERTED_UNPAID_FOLDER), exist_ok=True)
+  os.makedirs(os.path.join(Settings.APP_ROOT, Settings.CONVERTED_PAID_FOLDER), exist_ok=True)
+  os.makedirs(os.path.join(Settings.APP_ROOT, Settings.UPLOAD_FOLDER), exist_ok=True)
   db.create_tables([User, Video], safe=True)
   create_unauthorized_user()
 
