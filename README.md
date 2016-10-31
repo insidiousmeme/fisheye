@@ -10,7 +10,7 @@ Convert dual fisheye image to equirectangular images for mp4 video files.
 * Pull latest docker image  prepared for fisheye project
 `docker pull dmigous/fedora_fisheye`
 * Go to repo folder `cd fisheye`
-* Run ```docker run -i -t -p 80:80  -v `pwd`:/mnt fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"```
+* Run ```docker run -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"```
 
 After that your server is UP!
 
