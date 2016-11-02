@@ -20,18 +20,30 @@ from settings import Settings
 from base_model import db
 from fisheye import FisheyeVideoConverter
 
+import logging
+from logging.handlers import RotatingFileHandler
 
 UNAUTHORIZED_USER_EMAIL = 'unauthorized@mytech.today'
-
-# Print all queries to stderr.
-# import logging
-# logger = logging.getLogger('peewee')
-# logger.setLevel(logging.DEBUG)
-# logger.addHandler(logging.StreamHandler())
 
 app = Flask(__name__)
 app.secret_key = 'c298845c-beb8-4fdc-aef0-eabd22082697'
 
+#
+# Setup logger
+#
+handler = RotatingFileHandler(Settings.LOG_FILE_PATH,
+                              maxBytes=Settings.LOG_FILE_MAX_SIZE,
+                              backupCount=1)
+handler.setLevel(Settings.LOG_LEVEL)
+formatter = logging.Formatter(
+    "%(asctime)s | %(pathname)s:%(lineno)d | %(funcName)s | %(levelname)s | %(message)s ")
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+app.logger.setLevel(Settings.LOG_LEVEL)
+
+#
+# Helper functions
+#
 class ConvertFisheyeVideoForm(FlaskForm):
   email = StringField('Email Address', [validators.DataRequired()])
   password = PasswordField('Password', [validators.DataRequired()])
@@ -43,14 +55,84 @@ def allowed_file(filename):
   return '.' in filename and \
     filename.lower().rsplit('.', 1)[1] in Settings.ALLOWED_EXTENSIONS
 
+def convert_fisheye_video(original_file_path, converted_file_path, degree, rotation):
+  video = Video.get(Video.original_file_path == original_file_path)
+  try:
+    converter = FisheyeVideoConverter()
+    print('START CONVERION of ' + video.uuid)
+    converter.fisheye_convert(original_file_path,
+                              converted_file_path,
+                              degree,
+                              rotation)
+  except Exception:
+    video.error = 'Failed to convert video'
+    video.save()
+    return
+
+  video.converted_file_size = os.path.getsize(video.converted_file_path)
+  video.save()
+
+  user = video.user
+  if user.payment_level == User.PAYMENT_LEVEL_LIMITED:
+    user.number_of_sessions_left -=1
+    user.save()
+
+def video_processor():
+  while True:
+    try:
+      not_processesed_videos = Video.select().where(Video.converted_file_size == -1).order_by(
+          Video.date_time.asc())
+    except Video.DoesNotExist:
+      sleep(15) # if no video to process then sleep 15 sec
+      continue
+
+    if not not_processesed_videos:
+      sleep(15) # if no video to process then sleep 15 sec
+      continue
+
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=Settings.PROCESSINGS_THREADS_NUM) as executor:
+      # for video in not_processesed_videos:
+      futures = {executor.submit(
+                  convert_fisheye_video,
+                  video.original_file_path,
+                  video.converted_file_path,
+                  video.degree,
+                  video.rotation): video for video in not_processesed_videos}
+
+      # print('================WAITING================')
+      concurrent.futures.wait(futures)
+      # not_processesed_videos = Video.select().where(Video.converted_file_size == -1).order_by(
+      #     Video.date_time.asc())
+      # print('not processed = ' + str(not_processesed_videos.count()))
+      # print('================DONE================')
+
+def create_unauthorized_user():
+  # Ensure that there is user created in db for unauthorized video processing
+  try:
+    User.create(
+      email=UNAUTHORIZED_USER_EMAIL,
+      password='unauthorized_mytech.today',
+      ip='127.0.0.1',
+      payment_level=User.PAYMENT_LEVEL_UNLIMITED
+    ).save()
+  except:
+    pass
+
 @app.before_first_request
 def init_application():
+  app.logger.debug('creating folders')
+  # create directories if not exists
   os.makedirs(os.path.join(Settings.CONVERTED_UNPAID_FOLDER), exist_ok=True)
   os.makedirs(os.path.join(Settings.CONVERTED_PAID_FOLDER), exist_ok=True)
   os.makedirs(os.path.join(Settings.UPLOAD_FOLDER), exist_ok=True)
+
+  app.logger.debug('initializating DB')
+  # create tables in db if not exists
   db.create_tables([User, Video], safe=True)
   create_unauthorized_user()
 
+  app.logger.debug('starting video_processor thread')
   threading.Thread(target=video_processor).start()
 
 @app.before_request
@@ -58,12 +140,14 @@ def before_request():
   g.db = db
   g.db.connect()
 
-
 @app.after_request
 def after_request(response):
   g.db.close()
   return response
 
+#
+# Routes
+#
 @app.route('/', methods=['GET', 'POST'])
 def index():
   form=ConvertFisheyeVideoForm()
@@ -136,72 +220,9 @@ def download(video_uuid):
       os.path.dirname(video.converted_file_path),
       os.path.basename(video.converted_file_path))
 
-
-def convert_fisheye_video(original_file_path, converted_file_path, degree, rotation):
-  video = Video.get(Video.original_file_path == original_file_path)
-  try:
-    converter = FisheyeVideoConverter()
-    print('START CONVERION of ' + video.uuid)
-    converter.fisheye_convert(original_file_path,
-                              converted_file_path,
-                              degree,
-                              rotation)
-  except Exception:
-    video.error = 'Failed to convert video'
-    video.save()
-    return
-
-  video.converted_file_size = os.path.getsize(video.converted_file_path)
-  video.save()
-
-  user = video.user
-  if user.payment_level == User.PAYMENT_LEVEL_LIMITED:
-    user.number_of_sessions_left -=1
-    user.save()
-
-
-def video_processor():
-  while True:
-    try:
-      not_processesed_videos = Video.select().where(Video.converted_file_size == -1).order_by(
-          Video.date_time.asc())
-    except Video.DoesNotExist:
-      sleep(15) # if no video to process then sleep 15 sec
-      continue
-
-    if not not_processesed_videos:
-      sleep(15) # if no video to process then sleep 15 sec
-      continue
-
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=Settings.PROCESSINGS_THREADS_NUM) as executor:
-      # for video in not_processesed_videos:
-      futures = {executor.submit(
-                  convert_fisheye_video,
-                  video.original_file_path,
-                  video.converted_file_path,
-                  video.degree,
-                  video.rotation): video for video in not_processesed_videos}
-
-      # print('================WAITING================')
-      concurrent.futures.wait(futures)
-      # not_processesed_videos = Video.select().where(Video.converted_file_size == -1).order_by(
-      #     Video.date_time.asc())
-      # print('not processed = ' + str(not_processesed_videos.count()))
-      # print('================DONE================')
-
-
-def create_unauthorized_user():
-  # Ensure that there is user created in db for unauthorized video processing
-  try:
-    User.create(
-      email=UNAUTHORIZED_USER_EMAIL,
-      password='unauthorized_mytech.today',
-      ip='127.0.0.1',
-      payment_level=User.PAYMENT_LEVEL_UNLIMITED
-    ).save()
-  except:
-    pass
+#
+# Main
+#
 
 if __name__ == '__main__':
-  app.run()
+  app.run(host='0.0.0.0', port=80)
