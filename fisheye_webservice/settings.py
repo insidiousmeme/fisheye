@@ -23,3 +23,9 @@ class Settings(object):
   LOG_FILE_MAX_SIZE = 100 * 1024 # Bytes
   # logging level. See available https://docs.python.org/3/library/logging.html#logging-levels
   LOG_LEVEL = logging.DEBUG
+
+  #
+  # Video store timeouts (hours)
+  #
+  PAID_VIDEO_TIMEOUT = 72 # hours
+  UNPAID_VIDEO_TIMEOUT = 24 # hours

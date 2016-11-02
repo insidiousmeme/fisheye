@@ -2,6 +2,8 @@ import os
 import uuid
 
 from time import sleep
+from datetime import datetime, timedelta
+
 from flask import Flask, request, flash, redirect, url_for, send_from_directory, g
 from flask import render_template
 
@@ -117,7 +119,32 @@ def video_processor():
       concurrent.futures.wait(futures)
       not_processesed_videos = Video.select().where(Video.converted_file_size == -1).order_by(
           Video.date_time.asc())
-      app.logger.info('Currently %d videos in processing queue' + not_processesed_videos.count())
+      app.logger.info('Currently %d videos in processing queue', not_processesed_videos.count())
+
+def video_files_cleaner():
+  while True:
+    try:
+      app.logger.debug('Deleting paid videos older than %d hours', Settings.PAID_VIDEO_TIMEOUT)
+      ttl = datetime.now() - timedelta(hours=Settings.PAID_VIDEO_TIMEOUT)
+      for video in Video.select().where(Video.paid == True, Video.date_time < ttl):
+        os.remove(video.original_file_path)
+        os.remove(video.converted_file_path)
+        video.delete_instance()
+    except:
+      pass
+
+    try:
+      app.logger.debug('Deleting unpaid videos older than %d hours', Settings.UNPAID_VIDEO_TIMEOUT)
+      ttl = datetime.now() - timedelta(hours=Settings.UNPAID_VIDEO_TIMEOUT)
+      for video in Video.select().where(Video.paid == False, Video.date_time < ttl):
+        os.remove(video.original_file_path)
+        os.remove(video.converted_file_path)
+        video.delete_instance()
+    except:
+      pass
+
+    # Make a check once an hour
+    sleep(1 * 60 * 60) # 1 hour
 
 def create_unauthorized_user():
   # Ensure that there is user created in db for unauthorized video processing
@@ -133,19 +160,22 @@ def create_unauthorized_user():
 
 @app.before_first_request
 def init_application():
-  app.logger.debug('creating folders')
+  app.logger.debug('Creating folders')
   # create directories if not exists
   os.makedirs(os.path.join(Settings.CONVERTED_UNPAID_FOLDER), exist_ok=True)
   os.makedirs(os.path.join(Settings.CONVERTED_PAID_FOLDER), exist_ok=True)
   os.makedirs(os.path.join(Settings.UPLOAD_FOLDER), exist_ok=True)
 
-  app.logger.debug('initializating DB')
+  app.logger.debug('Initializating DB')
   # create tables in db if not exists
   db.create_tables([User, Video], safe=True)
   create_unauthorized_user()
 
-  app.logger.debug('starting video_processor thread')
+  app.logger.debug('Starting video_processor thread')
   threading.Thread(target=video_processor).start()
+
+  app.logger.debug('Starting video_files_cleaner thread')
+  threading.Thread(target=video_files_cleaner).start()
 
 @app.before_request
 def before_request():
@@ -169,18 +199,18 @@ def index():
     # if user does not select file, browser also
     # submit a empty part without filename
     if allowed_file(filename):
-      to_unpaid = False
+      paid = False
       try:
         user = User.get(User.email == form.email.data, User.password == form.password.data)
         app.logger.info('User %s authorization success.', user.email)
       except:
         app.logger.info('There is no user %s with given password. Falling to unpaid session.', form.email.data)
-        to_unpaid = True
+        paid = False
         user = User.get(User.email == UNAUTHORIZED_USER_EMAIL)
 
       if user and user.payment_level == User.PAYMENT_LEVEL_LIMITED and user.number_of_sessions_left < 1:
         app.logger.info('User %s has no paid sessions left. Falling to unpaid session', user.email)
-        to_unpaid = True
+        paid = False
 
       extension = os.path.splitext(filename)[1]
       video_uuid = str(uuid.uuid4())
@@ -188,7 +218,7 @@ def index():
       remote_addr = request.remote_addr if request.remote_addr is not None else ''
       original_file_path = os.path.join(Settings.UPLOAD_FOLDER, filename)
       converted_file_path = os.path.join(
-          (Settings.CONVERTED_UNPAID_FOLDER if to_unpaid \
+          (Settings.CONVERTED_UNPAID_FOLDER if not paid \
             else Settings.CONVERTED_PAID_FOLDER), filename)
 
       app.logger.debug('Saving video %s on disk', video_uuid)
@@ -202,7 +232,8 @@ def index():
                            original_file_path=original_file_path,
                            degree=form.degree.data,
                            rotation=form.rotation.data,
-                           converted_file_path=converted_file_path)
+                           converted_file_path=converted_file_path,
+                           paid=paid)
       video.save()
 
       return redirect(url_for('get_result', video_uuid=video_uuid))

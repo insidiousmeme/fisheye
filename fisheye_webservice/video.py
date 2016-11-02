@@ -14,6 +14,7 @@ class Video(BaseModel):
   rotation = FloatField()
   converted_file_path = CharField()
   converted_file_size = IntegerField(default=-1)
+  paid = BooleanField()
   error = CharField(null=True)
 
   def is_processed():
