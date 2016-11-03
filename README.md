@@ -31,7 +31,20 @@ service running will also appear in host filesystem in folders `uploads` and
 `converted`
 * The last step is to start web server by `/etc/httpd/run_apache_foreground`
 
+### How to restart container?
 
+NOTE: this instructions only valid if you had __working correctly__ container
+and then by some reason it stoped and you need to restart it. Run following command:
+
+* cd into fisheye repo folder
+```
+cd workspace/fisheye
+```
+* kill all previous fisheye_webservice docker containers
+```
+docker rm `docker ps -a | grep "dmigous/fedora_fisheye" | awk '{print $1}'`
+```
+* Run ```docker run -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"```
 
 
 ## F.A.Q.
