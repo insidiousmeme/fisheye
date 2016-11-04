@@ -3,14 +3,47 @@ Convert dual fisheye image to equirectangular images for mp4 video files.
 
 
 ## How to Run on AWS Ubuntu
-
 * ssh into AWS instance
 * Ensure you have installed git, docker
 * Clone repo `git clone git@github.com:insidiousmeme/fisheye.git`
 * Pull latest docker image  prepared for fisheye project
 `docker pull dmigous/fedora_fisheye`
+
+
+### Ubuntu 14.04 and Upstart
+AWS has Ubuntu 14.04. So to start `fisheye_webserver` container on AWS host boot
+we added Upstart config file. Before first usage you have to install it
+
+##### Install Upstart script (executed only once)
 * Go to repo folder `cd fisheye`
-* Run ```docker run -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"```
+* Run `sudo ./fisheye_webservice/util/upstart/install_upstart_script.sh`
+
+This will add relevant Upstart config to /etc/init folder.
+NOTE: from now config has embedded path to repo folder. If you will move
+repo folder on the file system to another place, then you have to re-invoke
+`install_upstart_script.sh` script.
+
+-----
+
+After installation now you can run `fisheye_websever` using
+`sudo service fisheye_webserver start`
+
+And stop `fisheye_websever` using
+`sudo service fisheye_webserver stop`
+
+
+### Other systems
+Upstart is supported only until Ubuntu 14.04. So if you want to run fisheye_webserver
+on another system it is good to know what happends behind the scenes of Upstart config.
+
+Here is instructions how to run `fisheye_webserver` docker container directly.
+
+* Go to repo folder `cd fisheye`
+* Run
+```
+docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
+```
+
 
 After that your server is UP!
 
@@ -31,7 +64,30 @@ service running will also appear in host filesystem in folders `uploads` and
 `converted`
 * The last step is to start web server by `/etc/httpd/run_apache_foreground`
 
+### How to restart container?
 
+If you had before __working correctly__ `fedora_fisheye` container
+and then by some reason it stoped and you need to restart it, then
+just run following command:
+
+```
+sudo docker start fisheye_webserver
+```
+It will take last running `fedora_fisheye` container start it.
+
+
+
+If it doesn't worked you can do following procedure:
+
+* cd into fisheye repo folder `cd workspace/fisheye`
+* kill all previous fisheye_webservice docker containers
+```
+docker rm `docker ps -a | grep "dmigous/fedora_fisheye" | awk '{print $1}'`
+```
+* Run
+```
+docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
+```
 
 
 ## F.A.Q.
