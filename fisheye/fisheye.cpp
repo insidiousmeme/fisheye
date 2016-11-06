@@ -15,7 +15,14 @@ using namespace cv;
 
 FisheyeVideoConverter::FisheyeVideoConverter() { frame_check = 1; }
 
-int FisheyeVideoConverter::calc_diameter(Mat frame) {
+void FisheyeVideoConverter::AddWatermarkTextToFrame(const std::string& text,
+                                                    cv::Mat& frame) {
+  int height = frame.size().height;
+  putText(frame, text, cv::Point(15, height / 2), cv::FONT_HERSHEY_DUPLEX, 1.5,
+          CV_RGB(255, 255, 0), 2.0);
+}
+
+int FisheyeVideoConverter::CalcDiameter(Mat frame) {
   Mat temp;
   cvtColor(frame(Rect(0, 0, frame.cols, frame.rows)), temp, CV_BGR2GRAY);
   equalizeHist(temp, temp);
@@ -52,7 +59,7 @@ int FisheyeVideoConverter::calc_diameter(Mat frame) {
   return dis * 2;
 }
 
-void FisheyeVideoConverter::creat_map(int diameter, int degree) {
+void FisheyeVideoConverter::CreateMap(int diameter, int degree) {
   diameter;
   float FOV =
       float(3.141592654 * degree / 180);  // FOV of the fisheye, eg: 180 degrees
@@ -85,9 +92,10 @@ void FisheyeVideoConverter::creat_map(int diameter, int degree) {
   }
 }
 
-int FisheyeVideoConverter::fisheye_convert(const std::string& input_file_path,
-                                           const std::string& output_file_path,
-                                           int degree, double rotation) {
+int FisheyeVideoConverter::Convert(const std::string& input_file_path,
+                                   const std::string& output_file_path,
+                                   int degree, double rotation,
+                                   const std::string& watermark_text) {
   VideoCapture incap(input_file_path);
   if (!incap.isOpened()) {
     return -1;
@@ -100,7 +108,7 @@ int FisheyeVideoConverter::fisheye_convert(const std::string& input_file_path,
     incap >> frame;
     if (!frame.empty())
       diameter_temp[i] =
-          calc_diameter(frame(Rect(0, 0, frame.cols / 2, frame.rows)));
+          CalcDiameter(frame(Rect(0, 0, frame.cols / 2, frame.rows)));
   }
   for (int i = 0; i < 99; i++) {
     if (diameter_temp[i] != -1) {
@@ -122,7 +130,7 @@ int FisheyeVideoConverter::fisheye_convert(const std::string& input_file_path,
   int x_pos = 4;
   int y_pos = 7;
   int replace_image = 0;
-  creat_map(diameter, degree);
+  CreateMap(diameter, degree);
   bool create_writer = 1;
   while (frame_check) {
     incap >> frame;
@@ -235,6 +243,10 @@ int FisheyeVideoConverter::fisheye_convert(const std::string& input_file_path,
         }
       }
 
+      if (!watermark_text.empty()) {
+        AddWatermarkTextToFrame(watermark_text, show_frame);
+      }
+
       output_cap << show_frame;
       // double win_property = getWindowProperty("show", 2);
       // if (win_property == -1) {
@@ -249,12 +261,11 @@ int FisheyeVideoConverter::fisheye_convert(const std::string& input_file_path,
   }
 
   output_cap.release();
-  //  output_cap.~VideoWriter();
   return 0;
 }
 
 // int main(int argc, char* argv[]) {
 //   FisheyeVideoConverter fisheye_converter;
-//   int ret = fisheye_converter.fisheye_convert(argv[1], argv[2], 190, 0.8);
+//   int ret = fisheye_converter.Convert(argv[1], argv[2], 190, 0.8, "demo - free version. Deposit money for paid version without watermark.");
 //   std::cout << "returned " << ret << std::endl;
 // }

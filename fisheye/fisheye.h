@@ -2,19 +2,19 @@
 #define FISHEYE_H_
 
 #include <opencv2/imgproc.hpp>
-
 #include <string>
 
 class FisheyeVideoConverter {
  public:
   FisheyeVideoConverter();
-  int fisheye_convert(const std::string& input_file_path,
-                      const std::string& output_file_path, int degree,
-                      double rotation);
+  int Convert(const std::string& input_file_path,
+              const std::string& output_file_path, int degree, double rotation,
+              const std::string& watermark_text = "");
 
  private:
-  int calc_diameter(cv::Mat frame);
-  void creat_map(int diameter, int degree);
+  void AddWatermarkTextToFrame(const std::string& text, cv::Mat& frame);
+  int CalcDiameter(cv::Mat frame);
+  void CreateMap(int diameter, int degree);
 
   cv::Mat map_x;
   cv::Mat map_y;
