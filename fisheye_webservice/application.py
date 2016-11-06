@@ -50,7 +50,7 @@ class ConvertFisheyeVideoForm(FlaskForm):
   email = StringField('Email Address', [validators.DataRequired()])
   password = PasswordField('Password', [validators.DataRequired()])
   video = FileField('Video File')
-  degree = IntegerField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250', min=0, max=250)], default=0)
+  degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250)], default=0)
   rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99)], default=0)
 
 def file_extension(filename):
