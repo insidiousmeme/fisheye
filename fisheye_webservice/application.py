@@ -69,11 +69,11 @@ def convert_fisheye_video(original_file_path, converted_file_path, degree, rotat
 
   try:
     converter = FisheyeVideoConverter()
-    app.logger.info('Start converion of %s', video.uuid)
-    converter.fisheye_convert(original_file_path,
-                              converted_file_path,
-                              degree,
-                              rotation)
+    app.logger.info('Start converion %s of %s', ("PAID" if video.paid else "UNPAID"), video.uuid)
+    if video.paid:
+      converter.Convert(original_file_path, converted_file_path, degree, rotation)
+    else:
+      converter.Convert(original_file_path, converted_file_path, degree, rotation, Settings.UNPAID_WATERMARK_TEXT)
   except Exception:
     app.logger.error('Failed to convert video %s', video.uuid)
     video.error = 'Failed to convert video'
