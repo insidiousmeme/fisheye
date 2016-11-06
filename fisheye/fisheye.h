@@ -8,8 +8,8 @@ class FisheyeVideoConverter {
  public:
   FisheyeVideoConverter();
   int Convert(const std::string& input_file_path,
-              const std::string& output_file_path, int degree, double rotation,
-              const std::string& watermark_text = "");
+              const std::string& output_file_path, double degree,
+              double rotation, const std::string& watermark_text = "");
 
  private:
   void AddWatermarkTextToFrame(const std::string& text, cv::Mat& frame);
