@@ -3263,16 +3263,6 @@ SWIG_AsPtr_std_string (PyObject * obj, std::string **val)
 }
 
 
-#include <limits.h>
-#if !defined(SWIG_NO_LLONG_MAX)
-# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
-#   define LLONG_MAX __LONG_LONG_MAX__
-#   define LLONG_MIN (-LLONG_MAX - 1LL)
-#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
-# endif
-#endif
-
-
 SWIGINTERN int
 SWIG_AsVal_double (PyObject *obj, double *val)
 {
@@ -3319,101 +3309,6 @@ SWIG_AsVal_double (PyObject *obj, double *val)
 }
 
 
-#include <float.h>
-
-
-#include <math.h>
-
-
-SWIGINTERNINLINE int
-SWIG_CanCastAsInteger(double *d, double min, double max) {
-  double x = *d;
-  if ((min <= x && x <= max)) {
-   double fx = floor(x);
-   double cx = ceil(x);
-   double rd =  ((x - fx) < 0.5) ? fx : cx; /* simple rint */
-   if ((errno == EDOM) || (errno == ERANGE)) {
-     errno = 0;
-   } else {
-     double summ, reps, diff;
-     if (rd < x) {
-       diff = x - rd;
-     } else if (rd > x) {
-       diff = rd - x;
-     } else {
-       return 1;
-     }
-     summ = rd + x;
-     reps = diff/summ;
-     if (reps < 8*DBL_EPSILON) {
-       *d = rd;
-       return 1;
-     }
-   }
-  }
-  return 0;
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_long (PyObject *obj, long* val)
-{
-#if PY_VERSION_HEX < 0x03000000
-  if (PyInt_Check(obj)) {
-    if (val) *val = PyInt_AsLong(obj);
-    return SWIG_OK;
-  } else
-#endif
-  if (PyLong_Check(obj)) {
-    long v = PyLong_AsLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      PyErr_Clear();
-      return SWIG_OverflowError;
-    }
-  }
-#ifdef SWIG_PYTHON_CAST_MODE
-  {
-    int dispatch = 0;
-    long v = PyInt_AsLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_AddCast(SWIG_OK);
-    } else {
-      PyErr_Clear();
-    }
-    if (!dispatch) {
-      double d;
-      int res = SWIG_AddCast(SWIG_AsVal_double (obj,&d));
-      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
-	if (val) *val = (long)(d);
-	return res;
-      }
-    }
-  }
-#endif
-  return SWIG_TypeError;
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_int (PyObject * obj, int *val)
-{
-  long v;
-  int res = SWIG_AsVal_long (obj, &v);
-  if (SWIG_IsOK(res)) {
-    if ((v < INT_MIN || v > INT_MAX)) {
-      return SWIG_OverflowError;
-    } else {
-      if (val) *val = static_cast< int >(v);
-    }
-  }  
-  return res;
-}
-
-
 SWIGINTERNINLINE PyObject*
   SWIG_From_int  (int value)
 {
@@ -3441,14 +3336,14 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_0(PyObject *SWIGU
   FisheyeVideoConverter *arg1 = (FisheyeVideoConverter *) 0 ;
   std::string *arg2 = 0 ;
   std::string *arg3 = 0 ;
-  int arg4 ;
+  double arg4 ;
   double arg5 ;
   std::string *arg6 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 = SWIG_OLDOBJ ;
   int res3 = SWIG_OLDOBJ ;
-  int val4 ;
+  double val4 ;
   int ecode4 = 0 ;
   double val5 ;
   int ecode5 = 0 ;
@@ -3489,11 +3384,11 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_0(PyObject *SWIGU
     }
     arg3 = ptr;
   }
-  ecode4 = SWIG_AsVal_int(obj3, &val4);
+  ecode4 = SWIG_AsVal_double(obj3, &val4);
   if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FisheyeVideoConverter_Convert" "', argument " "4"" of type '" "int""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FisheyeVideoConverter_Convert" "', argument " "4"" of type '" "double""'");
   } 
-  arg4 = static_cast< int >(val4);
+  arg4 = static_cast< double >(val4);
   ecode5 = SWIG_AsVal_double(obj4, &val5);
   if (!SWIG_IsOK(ecode5)) {
     SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "FisheyeVideoConverter_Convert" "', argument " "5"" of type '" "double""'");
@@ -3529,13 +3424,13 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_1(PyObject *SWIGU
   FisheyeVideoConverter *arg1 = (FisheyeVideoConverter *) 0 ;
   std::string *arg2 = 0 ;
   std::string *arg3 = 0 ;
-  int arg4 ;
+  double arg4 ;
   double arg5 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 = SWIG_OLDOBJ ;
   int res3 = SWIG_OLDOBJ ;
-  int val4 ;
+  double val4 ;
   int ecode4 = 0 ;
   double val5 ;
   int ecode5 = 0 ;
@@ -3574,11 +3469,11 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_1(PyObject *SWIGU
     }
     arg3 = ptr;
   }
-  ecode4 = SWIG_AsVal_int(obj3, &val4);
+  ecode4 = SWIG_AsVal_double(obj3, &val4);
   if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FisheyeVideoConverter_Convert" "', argument " "4"" of type '" "int""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FisheyeVideoConverter_Convert" "', argument " "4"" of type '" "double""'");
   } 
-  arg4 = static_cast< int >(val4);
+  arg4 = static_cast< double >(val4);
   ecode5 = SWIG_AsVal_double(obj4, &val5);
   if (!SWIG_IsOK(ecode5)) {
     SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "FisheyeVideoConverter_Convert" "', argument " "5"" of type '" "double""'");
@@ -3621,7 +3516,7 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
         _v = SWIG_CheckState(res);
         if (_v) {
           {
-            int res = SWIG_AsVal_int(argv[3], NULL);
+            int res = SWIG_AsVal_double(argv[3], NULL);
             _v = SWIG_CheckState(res);
           }
           if (_v) {
@@ -3650,7 +3545,7 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
         _v = SWIG_CheckState(res);
         if (_v) {
           {
-            int res = SWIG_AsVal_int(argv[3], NULL);
+            int res = SWIG_AsVal_double(argv[3], NULL);
             _v = SWIG_CheckState(res);
           }
           if (_v) {
@@ -3674,8 +3569,8 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'FisheyeVideoConverter_Convert'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,int,double,std::string const &)\n"
-    "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,int,double)\n");
+    "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,double,double,std::string const &)\n"
+    "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,double,double)\n");
   return 0;
 }
 

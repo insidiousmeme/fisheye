@@ -94,7 +94,7 @@ void FisheyeVideoConverter::CreateMap(int diameter, int degree) {
 
 int FisheyeVideoConverter::Convert(const std::string& input_file_path,
                                    const std::string& output_file_path,
-                                   int degree, double rotation,
+                                   double degree, double rotation,
                                    const std::string& watermark_text) {
   VideoCapture incap(input_file_path);
   if (!incap.isOpened()) {
