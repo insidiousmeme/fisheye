@@ -29,3 +29,8 @@ class Settings(object):
   #
   PAID_VIDEO_TIMEOUT = 72 # hours
   UNPAID_VIDEO_TIMEOUT = 24 # hours
+
+  #
+  # Watermark
+  #
+  UNPAID_WATERMARK_TEXT = 'DEMO - free version. Deposit money for paid version without watermark.'
