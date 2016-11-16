@@ -14,7 +14,7 @@ class Settings(object):
   UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads')
   CONVERTED_PAID_FOLDER = os.path.join(APP_ROOT, 'converted', 'paid')
   CONVERTED_UNPAID_FOLDER = os.path.join(APP_ROOT, 'converted', 'unpaid')
-  ALLOWED_EXTENSIONS = ['mp4', 'avi']
+  ALLOWED_EXTENSIONS = ['.mp4', '.avi']
 
   #
   # Log settings

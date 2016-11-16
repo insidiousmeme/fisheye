@@ -14,7 +14,7 @@ import threading
 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
-from wtforms import FloatField, IntegerField, StringField, PasswordField, validators
+from wtforms import FloatField, IntegerField, StringField, PasswordField, validators, ValidationError
 
 from user import User
 from video import Video
@@ -46,15 +46,34 @@ app.logger.setLevel(Settings.LOG_LEVEL)
 #
 # Helper functions
 #
+
+def VideoFileValidator(form, field):
+  from pprint import pprint
+  #pprint(field.__dict__)
+  filename = field.raw_data[0].filename
+  # if not field.raw_data[0].content_type in ["audio/mpeg"]:
+    # raise ValidationError(" must be an video file.")
+  if not filename:
+    raise ValidationError("You must select file to upload.")
+  ext = os.path.splitext(filename)[1]
+  app.logger.debug("User trying to upload file with extension %s", ext)
+  if not ext.lower() in Settings.ALLOWED_EXTENSIONS:
+    app.logger.error('File format %s not allowed', ext)
+    extensions_list = ', '.join(Settings.ALLOWED_EXTENSIONS)
+    raise ValidationError(" must be an video file with extension " + extensions_list)
+
 class ConvertFisheyeVideoForm(FlaskForm):
-  email = StringField('Email Address', [validators.DataRequired()])
+  email = StringField('Email Address', [validators.DataRequired(), validators.Email()])
   password = PasswordField('Password', [validators.DataRequired()])
-  video = FileField('Video File')
-  degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250)], default=0)
-  rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99)], default=0)
+  video = FileField('Video File', validators=[VideoFileValidator])
+  degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
+  rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99), validators.DataRequired()])
 
 def file_extension(filename):
-  return filename.lower().rsplit('.', 1)[1]
+  try:
+    return filename.lower().rsplit('.', 1)[1]
+  except:
+    return ''
 
 def allowed_file(filename):
   return '.' in filename and file_extension(filename) in Settings.ALLOWED_EXTENSIONS
@@ -77,6 +96,7 @@ def convert_fisheye_video(original_file_path, converted_file_path, degree, rotat
   except Exception:
     app.logger.error('Failed to convert video %s', video.uuid)
     video.error = 'Failed to convert video'
+    video.converted_file_size = 0 # to remove it from processing queue
     video.save()
     return
 
@@ -193,53 +213,47 @@ def after_request(response):
 @app.route('/', methods=['GET', 'POST'])
 def index():
   form=ConvertFisheyeVideoForm()
-  if request.method == 'POST':
+  if request.method == 'POST' and form.validate():
     filename = form.video.data.filename
 
-    # if user does not select file, browser also
-    # submit a empty part without filename
-    if allowed_file(filename):
+    paid = False
+    try:
+      user = User.get(User.email == form.email.data, User.password == form.password.data)
+      app.logger.info('User %s authorization success.', user.email)
+    except:
+      app.logger.info('There is no user %s with given password. Falling to unpaid session.', form.email.data)
       paid = False
-      try:
-        user = User.get(User.email == form.email.data, User.password == form.password.data)
-        app.logger.info('User %s authorization success.', user.email)
-      except:
-        app.logger.info('There is no user %s with given password. Falling to unpaid session.', form.email.data)
-        paid = False
-        user = User.get(User.email == UNAUTHORIZED_USER_EMAIL)
+      user = User.get(User.email == UNAUTHORIZED_USER_EMAIL)
 
-      if user and user.payment_level == User.PAYMENT_LEVEL_LIMITED and user.number_of_sessions_left < 1:
-        app.logger.info('User %s has no paid sessions left. Falling to unpaid session', user.email)
-        paid = False
+    if user and user.payment_level == User.PAYMENT_LEVEL_LIMITED and user.number_of_sessions_left < 1:
+      app.logger.info('User %s has no paid sessions left. Falling to unpaid session', user.email)
+      paid = False
 
-      extension = os.path.splitext(filename)[1]
-      video_uuid = str(uuid.uuid4())
-      filename = video_uuid + extension
-      remote_addr = request.remote_addr if request.remote_addr is not None else ''
-      original_file_path = os.path.join(Settings.UPLOAD_FOLDER, filename)
-      converted_file_path = os.path.join(
-          (Settings.CONVERTED_UNPAID_FOLDER if not paid \
-            else Settings.CONVERTED_PAID_FOLDER), filename)
+    extension = os.path.splitext(filename)[1]
+    video_uuid = str(uuid.uuid4())
+    filename = video_uuid + extension
+    remote_addr = request.remote_addr if request.remote_addr is not None else ''
+    original_file_path = os.path.join(Settings.UPLOAD_FOLDER, filename)
+    converted_file_path = os.path.join(
+        (Settings.CONVERTED_UNPAID_FOLDER if not paid \
+          else Settings.CONVERTED_PAID_FOLDER), filename)
 
-      app.logger.debug('Saving video %s on disk', video_uuid)
-      form.video.data.save(original_file_path)
-      app.logger.debug('Saved video %s original file size is %d Bytes', video_uuid, os.path.getsize(original_file_path))
+    app.logger.debug('Saving video %s on disk', video_uuid)
+    form.video.data.save(original_file_path)
+    app.logger.debug('Saved video %s original file size is %d Bytes', video_uuid, os.path.getsize(original_file_path))
 
-      app.logger.debug('Saving video info to db')
-      video = Video.create(user=user,
-                           ip=remote_addr,
-                           uuid=video_uuid,
-                           original_file_path=original_file_path,
-                           degree=form.degree.data,
-                           rotation=form.rotation.data,
-                           converted_file_path=converted_file_path,
-                           paid=paid)
-      video.save()
+    app.logger.debug('Saving video info to db')
+    video = Video.create(user=user,
+                         ip=remote_addr,
+                         uuid=video_uuid,
+                         original_file_path=original_file_path,
+                         degree=form.degree.data,
+                         rotation=form.rotation.data,
+                         converted_file_path=converted_file_path,
+                         paid=paid)
+    video.save()
+    return redirect(url_for('get_result', video_uuid=video_uuid))
 
-      return redirect(url_for('get_result', video_uuid=video_uuid))
-    else:
-      app.logger.error('File format %s not allowed', file_extension(filename))
-      return render_template('index.html', error='File format not allowed')
 
   return render_template('index.html', form=form)
 
