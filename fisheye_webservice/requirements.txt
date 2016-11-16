@@ -2,3 +2,4 @@ flask
 Flask-WTF
 peewee
 flup6
+Flask-Analytics

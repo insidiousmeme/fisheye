@@ -4,8 +4,8 @@ import uuid
 from time import sleep
 from datetime import datetime, timedelta
 
-from flask import Flask, request, flash, redirect, url_for, send_from_directory, g
-from flask import render_template
+from flask import Flask, request, flash, redirect, url_for, send_from_directory, g, render_template
+from flask_analytics import Analytics
 
 from peewee import *
 from fisheye import FisheyeVideoConverter
@@ -28,6 +28,9 @@ from logging.handlers import RotatingFileHandler
 UNAUTHORIZED_USER_EMAIL = 'unauthorized@mytech.today'
 
 app = Flask(__name__)
+Analytics(app)
+app.config['ANALYTICS']['GOOGLE_UNIVERSAL_ANALYTICS']['ACCOUNT'] = Settings.GOOGLE_ANALYTICS_TRACKING_ID
+
 app.secret_key = 'c298845c-beb8-4fdc-aef0-eabd22082697'
 
 #
