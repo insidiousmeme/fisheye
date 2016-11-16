@@ -28,6 +28,8 @@ from logging.handlers import RotatingFileHandler
 UNAUTHORIZED_USER_EMAIL = 'unauthorized@mytech.today'
 
 app = Flask(__name__)
+
+# docs: https://github.com/citruspi/Flask-Analytics
 Analytics(app)
 app.config['ANALYTICS']['GOOGLE_UNIVERSAL_ANALYTICS']['ACCOUNT'] = Settings.GOOGLE_ANALYTICS_TRACKING_ID
 
