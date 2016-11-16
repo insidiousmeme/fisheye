@@ -34,3 +34,8 @@ class Settings(object):
   # Watermark
   #
   UNPAID_WATERMARK_TEXT = 'DEMO - free version. Deposit money for paid version without watermark.'
+
+  #
+  # Analytics
+  #
+  GOOGLE_ANALYTICS_TRACKING_ID = 'UA-86511099-1'
