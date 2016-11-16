@@ -48,11 +48,7 @@ app.logger.setLevel(Settings.LOG_LEVEL)
 #
 
 def VideoFileValidator(form, field):
-  from pprint import pprint
-  #pprint(field.__dict__)
   filename = field.raw_data[0].filename
-  # if not field.raw_data[0].content_type in ["audio/mpeg"]:
-    # raise ValidationError(" must be an video file.")
   if not filename:
     raise ValidationError("You must select file to upload.")
   ext = os.path.splitext(filename)[1]
@@ -68,15 +64,6 @@ class ConvertFisheyeVideoForm(FlaskForm):
   video = FileField('Video File', validators=[VideoFileValidator])
   degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
   rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99), validators.DataRequired()])
-
-def file_extension(filename):
-  try:
-    return filename.lower().rsplit('.', 1)[1]
-  except:
-    return ''
-
-def allowed_file(filename):
-  return '.' in filename and file_extension(filename) in Settings.ALLOWED_EXTENSIONS
 
 def convert_fisheye_video(original_file_path, converted_file_path, degree, rotation):
   try:
