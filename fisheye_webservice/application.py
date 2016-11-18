@@ -14,13 +14,14 @@ import threading
 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
-from wtforms import FloatField, IntegerField, StringField, PasswordField, validators, ValidationError
+from wtforms import FloatField, IntegerField, StringField, SelectField, PasswordField, validators, ValidationError
 
 from user import User
 from video import Video
 from settings import Settings
 from base_model import db
 from fisheye import FisheyeVideoConverter
+import fisheye
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -48,6 +49,11 @@ handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 app.logger.setLevel(Settings.LOG_LEVEL)
 
+# Print all SQL queries to stderr.
+# logger = logging.getLogger('peewee')
+# logger.setLevel(logging.DEBUG)
+# logger.addHandler(logging.StreamHandler())
+
 #
 # Helper functions
 #
@@ -67,6 +73,15 @@ class ConvertFisheyeVideoForm(FlaskForm):
   email = StringField('Email Address', [validators.DataRequired(), validators.Email()])
   password = PasswordField('Password', [validators.DataRequired()])
   video = FileField('Video File', validators=[VideoFileValidator])
+  output_codec = SelectField('Output Codec', choices=[
+    ('mpeg-4', Settings.VIDEO_FORMATS['mpeg-4']['name']),
+    ('mpeg1', Settings.VIDEO_FORMATS['mpeg1']['name']),
+    ('flv1', Settings.VIDEO_FORMATS['flv1']['name']),
+    # ('mpeg-4.2', Settings.VIDEO_FORMATS['mpeg-4.2']['name']),
+    # ('mpeg-4.3', Settings.VIDEO_FORMATS['mpeg-4.3']['name']),
+    # ('h263', Settings.VIDEO_FORMATS['h263']['name']),
+    # ('h263i', Settings.VIDEO_FORMATS['h263i']['name']),
+  ], validators=[validators.DataRequired()])
   degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
   rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99), validators.DataRequired()])
 
@@ -78,14 +93,19 @@ def convert_fisheye_video(original_file_path, converted_file_path, degree, rotat
     app.logger.critical('Video %s not found in database', original_file_path)
     return
 
+  output_codec = Settings.VIDEO_FORMATS[video.output_codec]['code']
+  app.logger.debug("output_codec = %s(%d)", Settings.VIDEO_FORMATS[video.output_codec]['name'], output_codec)
   try:
     converter = FisheyeVideoConverter()
     app.logger.info('Start converion %s of %s', ("PAID" if video.paid else "UNPAID"), video.uuid)
     if video.paid:
-      converter.Convert(original_file_path, converted_file_path, degree, rotation)
+      res = converter.Convert(original_file_path, converted_file_path, degree, rotation, '', output_codec)
     else:
-      converter.Convert(original_file_path, converted_file_path, degree, rotation, Settings.UNPAID_WATERMARK_TEXT)
+      res = converter.Convert(original_file_path, converted_file_path, degree, rotation, Settings.UNPAID_WATERMARK_TEXT, output_codec)
   except Exception:
+    res = -1
+
+  if res < 0:
     app.logger.error('Failed to convert video %s', video.uuid)
     video.error = 'Failed to convert video'
     video.converted_file_size = 0 # to remove it from processing queue
@@ -221,14 +241,14 @@ def index():
       app.logger.info('User %s has no paid sessions left. Falling to unpaid session', user.email)
       paid = False
 
-    extension = os.path.splitext(filename)[1]
+    input_extension = os.path.splitext(filename)[1]
+    output_extension = Settings.VIDEO_FORMATS[form.output_codec.data]['extension']
     video_uuid = str(uuid.uuid4())
-    filename = video_uuid + extension
     remote_addr = request.remote_addr if request.remote_addr is not None else ''
-    original_file_path = os.path.join(Settings.UPLOAD_FOLDER, filename)
+    original_file_path = os.path.join(Settings.UPLOAD_FOLDER, video_uuid + input_extension)
     converted_file_path = os.path.join(
         (Settings.CONVERTED_UNPAID_FOLDER if not paid \
-          else Settings.CONVERTED_PAID_FOLDER), filename)
+          else Settings.CONVERTED_PAID_FOLDER), video_uuid + output_extension)
 
     app.logger.debug('Saving video %s on disk', video_uuid)
     form.video.data.save(original_file_path)
@@ -241,6 +261,7 @@ def index():
                          original_file_path=original_file_path,
                          degree=form.degree.data,
                          rotation=form.rotation.data,
+                         output_codec=form.output_codec.data,
                          converted_file_path=converted_file_path,
                          paid=paid)
     video.save()
@@ -283,9 +304,11 @@ def download(video_uuid):
     app.logger.info('Error occured during processing of video %s: %s', video_uuid, video.error)
     return render_template('get_result.html', error=video.error)
 
-  app.logger.info('Giving user data stream to download video %s', video_uuid)
-  return send_from_directory(os.path.dirname(video.converted_file_path),
-                             os.path.basename(video.converted_file_path))
+  app.logger.info('Giving user to download video %s', video_uuid)
+
+  dirname = os.path.dirname(video.converted_file_path)
+  filename = os.path.basename(video.converted_file_path)
+  return send_from_directory(dirname, filename, as_attachment=True, attachment_filename=filename)
 
 #
 # Main
