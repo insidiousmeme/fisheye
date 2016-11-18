@@ -82,10 +82,10 @@ class ConvertFisheyeVideoForm(FlaskForm):
     # ('h263', Settings.VIDEO_FORMATS['h263']['name']),
     # ('h263i', Settings.VIDEO_FORMATS['h263i']['name']),
   ], validators=[validators.DataRequired()])
-  degree = FloatField('Degree', [validators.NumberRange(message='Degree should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
+  angle = FloatField('Angle', [validators.NumberRange(message='Angle should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
   rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99), validators.DataRequired()])
 
-def convert_fisheye_video(original_file_path, converted_file_path, degree, rotation):
+def convert_fisheye_video(original_file_path, converted_file_path, angle, rotation):
   try:
     app.logger.debug('Querying video %s', original_file_path)
     video = Video.get(Video.original_file_path == original_file_path)
@@ -97,11 +97,11 @@ def convert_fisheye_video(original_file_path, converted_file_path, degree, rotat
   app.logger.debug("output_codec = %s(%d)", Settings.VIDEO_FORMATS[video.output_codec]['name'], output_codec)
   try:
     converter = FisheyeVideoConverter()
-    app.logger.info('Start converion %s of %s', ("PAID" if video.paid else "UNPAID"), video.uuid)
+    app.logger.info('Start converion %s of %s, lens angle = %f', ("PAID" if video.paid else "UNPAID"), video.uuid, video.angle)
     if video.paid:
-      res = converter.Convert(original_file_path, converted_file_path, degree, rotation, '', output_codec)
+      res = converter.Convert(original_file_path, converted_file_path, angle, rotation, '', output_codec)
     else:
-      res = converter.Convert(original_file_path, converted_file_path, degree, rotation, Settings.UNPAID_WATERMARK_TEXT, output_codec)
+      res = converter.Convert(original_file_path, converted_file_path, angle, rotation, Settings.UNPAID_WATERMARK_TEXT, output_codec)
   except Exception:
     res = -1
 
@@ -144,7 +144,7 @@ def video_processor():
                   convert_fisheye_video,
                   video.original_file_path,
                   video.converted_file_path,
-                  video.degree,
+                  video.angle,
                   video.rotation): video for video in not_processesed_videos}
 
       app.logger.info('Started video processing')
@@ -155,25 +155,29 @@ def video_processor():
 
 def video_files_cleaner():
   while True:
-    try:
-      app.logger.debug('Deleting paid videos older than %d hours', Settings.PAID_VIDEO_TIMEOUT)
-      ttl = datetime.now() - timedelta(hours=Settings.PAID_VIDEO_TIMEOUT)
-      for video in Video.select().where(Video.paid == True, Video.date_time < ttl):
+    app.logger.debug('Deleting paid videos older than %d hours', Settings.PAID_VIDEO_TIMEOUT)
+    ttl = datetime.now() - timedelta(hours=Settings.PAID_VIDEO_TIMEOUT)
+    for video in Video.select().where(Video.paid == True, Video.date_time < ttl):
+      try:
+        app.logger.debug('Deleting video %s', video.uuid)
         os.remove(video.original_file_path)
         os.remove(video.converted_file_path)
         video.delete_instance()
-    except:
-      pass
+      except:
+        app.logger.error('Failed to delete %s', video.uuid)
+        continue
 
-    try:
-      app.logger.debug('Deleting unpaid videos older than %d hours', Settings.UNPAID_VIDEO_TIMEOUT)
-      ttl = datetime.now() - timedelta(hours=Settings.UNPAID_VIDEO_TIMEOUT)
-      for video in Video.select().where(Video.paid == False, Video.date_time < ttl):
+    app.logger.debug('Deleting unpaid videos older than %d hours', Settings.UNPAID_VIDEO_TIMEOUT)
+    ttl = datetime.now() - timedelta(hours=Settings.UNPAID_VIDEO_TIMEOUT)
+    for video in Video.select().where(Video.paid == False, Video.date_time < ttl):
+      try:
+        app.logger.debug('Deleting video %s', video.uuid)
         os.remove(video.original_file_path)
         os.remove(video.converted_file_path)
         video.delete_instance()
-    except:
-      pass
+      except:
+        app.logger.error('Failed to delete %s', video.uuid)
+        continue
 
     # Make a check once an hour
     sleep(1 * 60 * 60) # 1 hour
@@ -259,7 +263,7 @@ def index():
                          ip=remote_addr,
                          uuid=video_uuid,
                          original_file_path=original_file_path,
-                         degree=form.degree.data,
+                         angle=form.angle.data,
                          rotation=form.rotation.data,
                          output_codec=form.output_codec.data,
                          converted_file_path=converted_file_path,

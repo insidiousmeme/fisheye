@@ -10,7 +10,7 @@ class Video(BaseModel):
   ip = CharField()
   uuid=CharField()
   original_file_path = CharField()
-  degree = FloatField()
+  angle = FloatField()
   rotation = FloatField()
   output_codec = CharField()
   converted_file_path = CharField()
