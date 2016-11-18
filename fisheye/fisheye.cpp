@@ -95,7 +95,8 @@ void FisheyeVideoConverter::CreateMap(int diameter, int degree) {
 int FisheyeVideoConverter::Convert(const std::string& input_file_path,
                                    const std::string& output_file_path,
                                    double degree, double rotation,
-                                   const std::string& watermark_text) {
+                                   const std::string& watermark_text,
+                                   Codec codec) {
   VideoCapture incap(input_file_path);
   if (!incap.isOpened()) {
     return -1;
@@ -235,7 +236,39 @@ int FisheyeVideoConverter::Convert(const std::string& input_file_path,
         int ex = static_cast<int>(
             incap.get(CV_CAP_PROP_FOURCC));  // Get Codec Type- Int form
 
-        output_cap.open(output_file_path, CV_FOURCC('D', 'I', 'V', 'X'),
+        int codec_opencv;
+        switch(codec) {
+          case CODEC_MPEG_4:
+            codec_opencv = CV_FOURCC('D', 'I', 'V', 'X');
+          case CODEC_MPEG_1:
+            codec_opencv = CV_FOURCC('P', 'I', 'M', '1');
+            break;
+          case CODEC_FLV1:
+            codec_opencv = CV_FOURCC('F', 'L', 'V', '1');
+            break;
+/*
+          case CODEC_MOTION_JPEG:
+            codec_opencv = CV_FOURCC('M', 'J', 'P', 'G');
+            break;
+          case CODEC_MPEG_4_2:
+            codec_opencv = CV_FOURCC('M', 'P', '4', '2');
+            break;
+          case CODEC_MPEG_4_3:
+            codec_opencv = CV_FOURCC('D', 'I', 'V', '3');
+            break;
+            break;
+          case CODEC_H263:
+            codec_opencv = CV_FOURCC('U', '2', '6', '3');
+            break;
+          case CODEC_H263I:
+            codec_opencv = CV_FOURCC('I', '2', '6', '3');
+            break;
+          default:
+            codec_opencv = CV_FOURCC('D', 'I', 'V', 'X');
+*/
+        }
+
+        output_cap.open(output_file_path, codec_opencv,
                         incap.get(CV_CAP_PROP_FPS),
                         Size(show_frame.cols, show_frame.rows), true);
         if (!output_cap.isOpened()) {
