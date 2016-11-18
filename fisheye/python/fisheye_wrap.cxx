@@ -3120,6 +3120,13 @@ namespace swig {
 #include "fisheye.h"
 
 
+SWIGINTERNINLINE PyObject*
+  SWIG_From_int  (int value)
+{
+  return PyInt_FromLong((long) value);
+}
+
+
 SWIGINTERN swig_type_info*
 SWIG_pchar_descriptor(void)
 {
@@ -3309,15 +3316,146 @@ SWIG_AsVal_double (PyObject *obj, double *val)
 }
 
 
-SWIGINTERNINLINE PyObject*
-  SWIG_From_int  (int value)
+#include <limits.h>
+#if !defined(SWIG_NO_LLONG_MAX)
+# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
+#   define LLONG_MAX __LONG_LONG_MAX__
+#   define LLONG_MIN (-LLONG_MAX - 1LL)
+#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+# endif
+#endif
+
+
+#include <float.h>
+
+
+#include <math.h>
+
+
+SWIGINTERNINLINE int
+SWIG_CanCastAsInteger(double *d, double min, double max) {
+  double x = *d;
+  if ((min <= x && x <= max)) {
+   double fx = floor(x);
+   double cx = ceil(x);
+   double rd =  ((x - fx) < 0.5) ? fx : cx; /* simple rint */
+   if ((errno == EDOM) || (errno == ERANGE)) {
+     errno = 0;
+   } else {
+     double summ, reps, diff;
+     if (rd < x) {
+       diff = x - rd;
+     } else if (rd > x) {
+       diff = rd - x;
+     } else {
+       return 1;
+     }
+     summ = rd + x;
+     reps = diff/summ;
+     if (reps < 8*DBL_EPSILON) {
+       *d = rd;
+       return 1;
+     }
+   }
+  }
+  return 0;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_long (PyObject *obj, long* val)
 {
-  return PyInt_FromLong((long) value);
+#if PY_VERSION_HEX < 0x03000000
+  if (PyInt_Check(obj)) {
+    if (val) *val = PyInt_AsLong(obj);
+    return SWIG_OK;
+  } else
+#endif
+  if (PyLong_Check(obj)) {
+    long v = PyLong_AsLong(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_OK;
+    } else {
+      PyErr_Clear();
+      return SWIG_OverflowError;
+    }
+  }
+#ifdef SWIG_PYTHON_CAST_MODE
+  {
+    int dispatch = 0;
+    long v = PyInt_AsLong(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_AddCast(SWIG_OK);
+    } else {
+      PyErr_Clear();
+    }
+    if (!dispatch) {
+      double d;
+      int res = SWIG_AddCast(SWIG_AsVal_double (obj,&d));
+      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
+	if (val) *val = (long)(d);
+	return res;
+      }
+    }
+  }
+#endif
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_int (PyObject * obj, int *val)
+{
+  long v;
+  int res = SWIG_AsVal_long (obj, &v);
+  if (SWIG_IsOK(res)) {
+    if ((v < INT_MIN || v > INT_MAX)) {
+      return SWIG_OverflowError;
+    } else {
+      if (val) *val = static_cast< int >(v);
+    }
+  }  
+  return res;
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+SWIGINTERN PyObject *CODEC_MPEG_4_swigconstant(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *module;
+  PyObject *d;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigconstant", &module)) return NULL;
+  d = PyModule_GetDict(module);
+  if (!d) return NULL;
+  SWIG_Python_SetConstant(d, "CODEC_MPEG_4",SWIG_From_int(static_cast< int >(CODEC_MPEG_4)));
+  return SWIG_Py_Void();
+}
+
+
+SWIGINTERN PyObject *CODEC_MPEG_1_swigconstant(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *module;
+  PyObject *d;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigconstant", &module)) return NULL;
+  d = PyModule_GetDict(module);
+  if (!d) return NULL;
+  SWIG_Python_SetConstant(d, "CODEC_MPEG_1",SWIG_From_int(static_cast< int >(CODEC_MPEG_1)));
+  return SWIG_Py_Void();
+}
+
+
+SWIGINTERN PyObject *CODEC_FLV1_swigconstant(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *module;
+  PyObject *d;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigconstant", &module)) return NULL;
+  d = PyModule_GetDict(module);
+  if (!d) return NULL;
+  SWIG_Python_SetConstant(d, "CODEC_FLV1",SWIG_From_int(static_cast< int >(CODEC_FLV1)));
+  return SWIG_Py_Void();
+}
+
+
 SWIGINTERN PyObject *_wrap_new_FisheyeVideoConverter(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   FisheyeVideoConverter *result = 0 ;
@@ -3332,6 +3470,103 @@ fail:
 
 
 SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  FisheyeVideoConverter *arg1 = (FisheyeVideoConverter *) 0 ;
+  std::string *arg2 = 0 ;
+  std::string *arg3 = 0 ;
+  double arg4 ;
+  double arg5 ;
+  std::string *arg6 = 0 ;
+  Codec arg7 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  int res3 = SWIG_OLDOBJ ;
+  double val4 ;
+  int ecode4 = 0 ;
+  double val5 ;
+  int ecode5 = 0 ;
+  int res6 = SWIG_OLDOBJ ;
+  int val7 ;
+  int ecode7 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  int result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:FisheyeVideoConverter_Convert",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_FisheyeVideoConverter, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "FisheyeVideoConverter_Convert" "', argument " "1"" of type '" "FisheyeVideoConverter *""'"); 
+  }
+  arg1 = reinterpret_cast< FisheyeVideoConverter * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "FisheyeVideoConverter_Convert" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "FisheyeVideoConverter_Convert" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    res3 = SWIG_AsPtr_std_string(obj2, &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "FisheyeVideoConverter_Convert" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "FisheyeVideoConverter_Convert" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    arg3 = ptr;
+  }
+  ecode4 = SWIG_AsVal_double(obj3, &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FisheyeVideoConverter_Convert" "', argument " "4"" of type '" "double""'");
+  } 
+  arg4 = static_cast< double >(val4);
+  ecode5 = SWIG_AsVal_double(obj4, &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "FisheyeVideoConverter_Convert" "', argument " "5"" of type '" "double""'");
+  } 
+  arg5 = static_cast< double >(val5);
+  {
+    std::string *ptr = (std::string *)0;
+    res6 = SWIG_AsPtr_std_string(obj5, &ptr);
+    if (!SWIG_IsOK(res6)) {
+      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "FisheyeVideoConverter_Convert" "', argument " "6"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "FisheyeVideoConverter_Convert" "', argument " "6"" of type '" "std::string const &""'"); 
+    }
+    arg6 = ptr;
+  }
+  ecode7 = SWIG_AsVal_int(obj6, &val7);
+  if (!SWIG_IsOK(ecode7)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "FisheyeVideoConverter_Convert" "', argument " "7"" of type '" "Codec""'");
+  } 
+  arg7 = static_cast< Codec >(val7);
+  result = (int)(arg1)->Convert((std::string const &)*arg2,(std::string const &)*arg3,arg4,arg5,(std::string const &)*arg6,arg7);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  if (SWIG_IsNewObj(res6)) delete arg6;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  if (SWIG_IsNewObj(res6)) delete arg6;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   FisheyeVideoConverter *arg1 = (FisheyeVideoConverter *) 0 ;
   std::string *arg2 = 0 ;
@@ -3419,7 +3654,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   FisheyeVideoConverter *arg1 = (FisheyeVideoConverter *) 0 ;
   std::string *arg2 = 0 ;
@@ -3493,14 +3728,14 @@ fail:
 
 SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[7] = {
+  PyObject *argv[8] = {
     0
   };
   Py_ssize_t ii;
   
   if (!PyTuple_Check(args)) SWIG_fail;
   argc = args ? PyObject_Length(args) : 0;
-  for (ii = 0; (ii < 6) && (ii < argc); ii++) {
+  for (ii = 0; (ii < 7) && (ii < argc); ii++) {
     argv[ii] = PyTuple_GET_ITEM(args,ii);
   }
   if (argc == 5) {
@@ -3525,7 +3760,7 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
               _v = SWIG_CheckState(res);
             }
             if (_v) {
-              return _wrap_FisheyeVideoConverter_Convert__SWIG_1(self, args);
+              return _wrap_FisheyeVideoConverter_Convert__SWIG_2(self, args);
             }
           }
         }
@@ -3557,7 +3792,46 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
               int res = SWIG_AsPtr_std_string(argv[5], (std::string**)(0));
               _v = SWIG_CheckState(res);
               if (_v) {
-                return _wrap_FisheyeVideoConverter_Convert__SWIG_0(self, args);
+                return _wrap_FisheyeVideoConverter_Convert__SWIG_1(self, args);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_FisheyeVideoConverter, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        int res = SWIG_AsPtr_std_string(argv[2], (std::string**)(0));
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          {
+            int res = SWIG_AsVal_double(argv[3], NULL);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v) {
+            {
+              int res = SWIG_AsVal_double(argv[4], NULL);
+              _v = SWIG_CheckState(res);
+            }
+            if (_v) {
+              int res = SWIG_AsPtr_std_string(argv[5], (std::string**)(0));
+              _v = SWIG_CheckState(res);
+              if (_v) {
+                {
+                  int res = SWIG_AsVal_int(argv[6], NULL);
+                  _v = SWIG_CheckState(res);
+                }
+                if (_v) {
+                  return _wrap_FisheyeVideoConverter_Convert__SWIG_0(self, args);
+                }
               }
             }
           }
@@ -3569,6 +3843,7 @@ SWIGINTERN PyObject *_wrap_FisheyeVideoConverter_Convert(PyObject *self, PyObjec
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'FisheyeVideoConverter_Convert'.\n"
     "  Possible C/C++ prototypes are:\n"
+    "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,double,double,std::string const &,Codec)\n"
     "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,double,double,std::string const &)\n"
     "    FisheyeVideoConverter::Convert(std::string const &,std::string const &,double,double)\n");
   return 0;
@@ -3605,6 +3880,9 @@ SWIGINTERN PyObject *FisheyeVideoConverter_swigregister(PyObject *SWIGUNUSEDPARM
 
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
+	 { (char *)"CODEC_MPEG_4_swigconstant", CODEC_MPEG_4_swigconstant, METH_VARARGS, NULL},
+	 { (char *)"CODEC_MPEG_1_swigconstant", CODEC_MPEG_1_swigconstant, METH_VARARGS, NULL},
+	 { (char *)"CODEC_FLV1_swigconstant", CODEC_FLV1_swigconstant, METH_VARARGS, NULL},
 	 { (char *)"new_FisheyeVideoConverter", _wrap_new_FisheyeVideoConverter, METH_VARARGS, NULL},
 	 { (char *)"FisheyeVideoConverter_Convert", _wrap_FisheyeVideoConverter_Convert, METH_VARARGS, NULL},
 	 { (char *)"delete_FisheyeVideoConverter", _wrap_delete_FisheyeVideoConverter, METH_VARARGS, NULL},
