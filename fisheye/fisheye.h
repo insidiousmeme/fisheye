@@ -24,7 +24,7 @@ class FisheyeVideoConverter {
   int Convert(const std::string& input_file_path,
               const std::string& output_file_path, double degree,
               double rotation, const std::string& watermark_text = "",
-              Codec codec = CODEC_DIVX);
+              Codec codec = CODEC_MPEG_4);
 
  private:
   void AddWatermarkTextToFrame(const std::string& text, cv::Mat& frame);
