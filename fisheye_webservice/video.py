@@ -12,6 +12,7 @@ class Video(BaseModel):
   original_file_path = CharField()
   degree = FloatField()
   rotation = FloatField()
+  output_codec = CharField()
   converted_file_path = CharField()
   converted_file_size = IntegerField(default=-1)
   paid = BooleanField()

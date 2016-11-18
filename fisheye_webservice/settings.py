@@ -1,5 +1,6 @@
 import os
 import logging
+import fisheye
 
 class Settings(object):
   """docstring for Settings"""
@@ -39,3 +40,17 @@ class Settings(object):
   # Analytics
   #
   GOOGLE_ANALYTICS_TRACKING_ID = 'UA-86511099-1'
+
+  VIDEO_FORMATS = {
+    # name, fisheye enum code, file extension
+    'mpeg-4': { 'name': 'MPEG-4', 'code': fisheye.CODEC_MPEG_4, 'extension': '.mp4'},
+    'mpeg1': { 'name': 'MPEG-1', 'code': fisheye.CODEC_MPEG_1, 'extension': '.mpeg'},
+    'flv1': { 'name': 'FLV1', 'code': fisheye.CODEC_FLV1, 'extension': '.flv'},
+
+    # TODO: following codecs don't work now
+    # 'm-jpeg': { 'name': 'Motion JPEG', 'code': fisheye.CODEC_MOTION_JPEG, 'extension': '.mjpeg'},
+    # 'mpeg-4.2': { 'name': 'MPEG-4.2', 'code': fisheye.CODEC_MPEG_4_2, 'extension': '.mp4'},
+    # 'mpeg-4.3': { 'name': 'MPEG-4.3', 'code': fisheye.CODEC_MPEG_4_3, 'extension': '.mp4'},
+    # 'h263': { 'name': 'H263', 'code': fisheye.CODEC_H263, 'extension': '.mp4'},
+    # 'h263i': { 'name': 'H263I', 'code': fisheye.CODEC_H263I, 'extension': '.mp4'},
+  }

@@ -90,6 +90,15 @@ except AttributeError:
     _newclass = 0
 
 
+
+_fisheye.CODEC_MPEG_4_swigconstant(_fisheye)
+CODEC_MPEG_4 = _fisheye.CODEC_MPEG_4
+
+_fisheye.CODEC_MPEG_1_swigconstant(_fisheye)
+CODEC_MPEG_1 = _fisheye.CODEC_MPEG_1
+
+_fisheye.CODEC_FLV1_swigconstant(_fisheye)
+CODEC_FLV1 = _fisheye.CODEC_FLV1
 class FisheyeVideoConverter(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, FisheyeVideoConverter, name, value)
