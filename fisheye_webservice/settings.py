@@ -7,7 +7,7 @@ class Settings(object):
   APP_ROOT = os.path.dirname(os.path.realpath(__file__))
 
   # Number of allowed threads/process to run in parallel to process videos
-  PROCESSINGS_THREADS_NUM = 2
+  PROCESSINGS_THREADS_NUM = 3
 
   #
   # Uploads settings
