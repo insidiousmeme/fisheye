@@ -74,16 +74,36 @@ class ConvertFisheyeVideoForm(FlaskForm):
   password = PasswordField('Password', [validators.DataRequired()])
   video = FileField('Video File', validators=[VideoFileValidator])
   output_codec = SelectField('Output Codec', choices=[
-    ('mpeg-4', Settings.VIDEO_FORMATS['mpeg-4']['name']),
-    ('mpeg1', Settings.VIDEO_FORMATS['mpeg1']['name']),
-    ('flv1', Settings.VIDEO_FORMATS['flv1']['name']),
-    # ('mpeg-4.2', Settings.VIDEO_FORMATS['mpeg-4.2']['name']),
-    # ('mpeg-4.3', Settings.VIDEO_FORMATS['mpeg-4.3']['name']),
-    # ('h263', Settings.VIDEO_FORMATS['h263']['name']),
-    # ('h263i', Settings.VIDEO_FORMATS['h263i']['name']),
-  ], validators=[validators.DataRequired()])
-  angle = FloatField('Angle', [validators.NumberRange(message='Angle should be from 0 to 250.00', min=0, max=250), validators.DataRequired()])
-  rotation = FloatField('Rotation', [validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99), validators.DataRequired()])
+      ('mpeg-4', Settings.VIDEO_FORMATS['mpeg-4']['name']),
+      ('mpeg1', Settings.VIDEO_FORMATS['mpeg1']['name']),
+      ('flv1', Settings.VIDEO_FORMATS['flv1']['name']),
+      # ('mpeg-4.2', Settings.VIDEO_FORMATS['mpeg-4.2']['name']),
+      # ('mpeg-4.3', Settings.VIDEO_FORMATS['mpeg-4.3']['name']),
+      # ('h263', Settings.VIDEO_FORMATS['h263']['name']),
+      # ('h263i', Settings.VIDEO_FORMATS['h263i']['name']),
+    ],
+    validators=[validators.DataRequired()])
+  angle_dropdown = SelectField('Angle x Rotation', coerce=str, choices=[
+    # NOTE: below folling format: angle value and drop down name in UI
+    ('190', 'Video frame (4:3)'),
+    ('187', 'Video frame (16:9)'),
+    ('custom', 'Custom...')], validators=[validators.DataRequired()])
+  angle = FloatField('Angle')
+  rotation = FloatField('Rotation', validators=[
+    validators.NumberRange(message='Rotation should be from 0 to 359.99', min=0, max=359.99),
+    validators.DataRequired()])
+
+  def validate(self):
+    # If angle_dropdown selected to custom option then we should validated entered custom values
+    if self.angle_dropdown.data == 'custom':
+      self.angle.validators = [
+        validators.NumberRange(message='Angle should be from 0 to 250.00', min=0, max=250),
+        validators.DataRequired()]
+    else:
+      self.angle.validators = [validators.Optional()]
+
+    # Call parent class validation
+    return FlaskForm.validate(self)
 
 def convert_fisheye_video(original_file_path, converted_file_path, angle, rotation):
   try:
@@ -259,11 +279,17 @@ def index():
     app.logger.debug('Saved video %s original file size is %d Bytes', video_uuid, os.path.getsize(original_file_path))
 
     app.logger.debug('Saving video info to db')
+
+    if form.angle_dropdown.data == 'custom':
+      angle=form.angle.data
+    else:
+      angle = form.angle_dropdown.data
+
     video = Video.create(user=user,
                          ip=remote_addr,
                          uuid=video_uuid,
                          original_file_path=original_file_path,
-                         angle=form.angle.data,
+                         angle=angle,
                          rotation=form.rotation.data,
                          output_codec=form.output_codec.data,
                          converted_file_path=converted_file_path,

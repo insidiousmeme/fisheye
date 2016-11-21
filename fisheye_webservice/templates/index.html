@@ -3,6 +3,9 @@
 <head>
     <title>Fisheye converter</title>
     {{ analytics }}
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>‌​
 </head>
 
 <h2>Fisheye converter</h2>
@@ -22,10 +25,30 @@ Errors:
     {{ render_field(form.password) }}
     {{ render_field(form.video) }}
     {{ render_field(form.output_codec) }}
-    {{ render_field(form.angle) }}
+    {{ render_field(form.angle_dropdown) }}
+    <div id="custom-angle" style="display: none">
+      {{ render_field(form.angle) }}
+    </div>
     {{ render_field(form.rotation) }}
   </dl>
   <p><input type=submit value=Convert>
 </form>
+
+<script type="text/javascript">
+  var toggle_custom_angle = function() {
+    if ($('#angle_dropdown').val() === "custom") {
+      $("#custom-angle").show();
+    } else {
+      $("#custom-angle").hide();
+    }
+  };
+  $( window ).load(function() {
+    toggle_custom_angle();
+  });
+
+  $('#angle_dropdown').on('change', function() {
+    toggle_custom_angle()
+  });
+</script>
 
 </html>
