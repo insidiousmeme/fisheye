@@ -7,7 +7,12 @@ Convert dual fisheye image to equirectangular images for mp4 video files.
 * Ensure you have installed git, docker
 * Clone repo `git clone git@github.com:insidiousmeme/fisheye.git`
 * Pull latest docker image  prepared for fisheye project
-`docker pull dmigous/fedora_fisheye`
+`docker pull insidiousmeme/fedora_fisheye`
+
+OR
+
+* Build docker image from Dockerfile
+`docker build -t insidiousmeme/fedora_fisheye .`
 
 
 ### Ubuntu 14.04 and Upstart
@@ -41,7 +46,7 @@ Here is instructions how to run `fisheye_webserver` docker container directly.
 * Go to repo folder `cd fisheye`
 * Run
 ```
-docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
+docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt insidiousmeme/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
 ```
 
 
@@ -82,11 +87,11 @@ If it doesn't worked you can do following procedure:
 * cd into fisheye repo folder `cd workspace/fisheye`
 * kill all previous fisheye_webservice docker containers
 ```
-docker rm `docker ps -a | grep "dmigous/fedora_fisheye" | awk '{print $1}'`
+docker rm `docker ps -a | grep "insidiousmeme/fedora_fisheye" | awk '{print $1}'`
 ```
 * Run
 ```
-docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt dmigous/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
+docker run -d --name fisheye_webserver -i -t -p 80:80 -v `pwd`:/mnt insidiousmeme/fedora_fisheye /bin/bash -c "source /root/.bashrc; /mnt/fisheye_webservice/util/prepare_apache.sh; /etc/httpd/run_apache_foreground"
 ```
 
 
