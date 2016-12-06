@@ -105,4 +105,12 @@ required projects. Having such docker image we are able to run our system on
 any host that supports docker.
 
 
+###### 2. How to update DB?
+```
+sqlite3 ./fisheye_webservice/fisheye_webservice.db
+insert into user(email, password, date_time, ip, payment_level) values('a@b.com', 'qwerty', (DATETIME('NOW')), '127.0.0.1', 1);
+```
+
+
+
 ## Known issues
