@@ -182,7 +182,8 @@ def video_files_cleaner():
         app.logger.debug('Deleting video %s', video.uuid)
         os.remove(video.original_file_path)
         os.remove(video.converted_file_path)
-        video.delete_instance()
+        # Remove record from DB
+        # video.delete_instance()
       except:
         app.logger.error('Failed to delete %s', video.uuid)
         continue
@@ -194,7 +195,8 @@ def video_files_cleaner():
         app.logger.debug('Deleting video %s', video.uuid)
         os.remove(video.original_file_path)
         os.remove(video.converted_file_path)
-        video.delete_instance()
+        # Remove record from DB
+        # video.delete_instance()
       except:
         app.logger.error('Failed to delete %s', video.uuid)
         continue
