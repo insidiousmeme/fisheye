@@ -254,7 +254,7 @@ def index():
   if request.method == 'POST' and form.validate():
     filename = form.video.data.filename
 
-    paid = False
+    paid = True
     try:
       user = User.get(User.email == form.email.data, User.password == form.password.data)
       app.logger.info('User %s authorization success.', user.email)
